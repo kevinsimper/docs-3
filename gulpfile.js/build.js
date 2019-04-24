@@ -18,7 +18,7 @@
 
 const gulp = require('gulp');
 const {sh} = require('@lib/utils/sh');
-const mri = require('mri');
+const config = require('@lib/config');
 const del = require('del');
 const {samplesBuilder} = require('@lib/build/samplesBuilder');
 const {project} = require('@lib/utils');
@@ -132,7 +132,9 @@ function importAll() {
  * Starts Grow to build the pages
  */
 function pages() {
-
+  return sh('grow deploy --noconfirm --threaded', {
+    workingDir: project.paths.GROW_POD
+  });
 }
 
 exports.clean = clean;
