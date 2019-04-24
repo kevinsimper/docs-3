@@ -18,15 +18,15 @@
 
 const gulp = require('gulp');
 const {sh} = require('@lib/utils/sh');
-const config = require('@lib/config');
+const _ = require('@lib/config');
 const del = require('del');
 const {samplesBuilder} = require('@lib/build/samplesBuilder');
 const {project} = require('@lib/utils');
 const ComponentReferenceImporter = require('@lib/pipeline/componentReferenceImporter');
 const SpecImporter = require('@lib/pipeline/specImporter');
 const roadmapImporter = require('@lib/pipeline/roadmapImporter');
+const {pageTransformer} = require('@lib/build/pageTransformer');
 const gulpSass = require('gulp-sass');
-const stripCssComments = require('gulp-strip-css-comments');
 
 /**
  * Cleans all directories/files that get created by any of the following
@@ -67,19 +67,20 @@ function clean() {
  *
  * @return {Stream}
  */
-function sass() {
+function _sass() {
   const options = {
     'outputStyle': 'compressed',
     'includePaths': project.paths.SCSS,
   };
 
   return gulp.src(project.paths.SCSS)
-    .pipe(gulpSass(options))
-    .on('error', function(e) {
-      console.error(e);
-      this.emit('end');
-    })
-    .pipe(gulp.dest(project.paths.CSS));
+      .pipe(gulpSass(options))
+      .on('error', function(e) {
+        console.error(e);
+        // eslint-disable-next-line no-invalid-this
+        this.emit('end');
+      })
+      .pipe(gulp.dest(project.paths.CSS));
 }
 
 /**
@@ -87,9 +88,9 @@ function sass() {
  *
  * @return {Stream}
  */
-function templates() {
+function _templates() {
   return gulp.src(project.absolute('frontend/templates/**/*'))
-    .pipe(gulp.dest(project.paths.GROW_POD));
+      .pipe(gulp.dest(project.paths.GROW_POD));
 }
 
 /**
@@ -97,9 +98,35 @@ function templates() {
  *
  * @return {Stream}
  */
-function icons() {
+function _icons() {
   return gulp.src(project.absolute('frontend/icons/**/*'))
-    .pipe(gulp.dest(`${project.paths.GROW_POD}/icons`));
+      .pipe(gulp.dest(`${project.paths.GROW_POD}/icons`));
+}
+
+/**
+ * Builds the playground
+ * @return {Promise}
+ */
+function buildPlayground() {
+  return sh('npm run build:playground');
+}
+
+/**
+ * Builds the boilerplate generator
+ * @return {Promise}
+ */
+function buildBoilerplate() {
+  return sh('node build.js', {
+    workingDir: project.absolute('boilerplate'),
+  });
+}
+
+/**
+ * Runs all tasks needed to build the frontend
+ * @return {Promise}
+ */
+function buildFrontend(callback) {
+  return (gulp.parallel(_sass, _templates, _icons))(callback);
 }
 
 
@@ -109,7 +136,7 @@ function icons() {
  *
  * @return {Promise}
  */
-function samples() {
+function buildSamples() {
   return samplesBuilder.build(true);
 }
 
@@ -131,14 +158,36 @@ function importAll() {
 /**
  * Starts Grow to build the pages
  */
-function pages() {
-  return sh('grow deploy --noconfirm --threaded', {
-    workingDir: project.paths.GROW_POD
+async function buildPages() {
+  await sh('grow deploy --noconfirm --threaded', {
+    workingDir: project.paths.GROW_POD,
   });
+
+  // After the pages have been built by Grow create transformed versions
+  return pageTransformer.start(project.paths.GROW_BUILD_DEST);
+}
+
+async function prepareBuild() {
+  await sh('npm run lint:node');
+
+  // Those two are built that early in the flow as they are fairly quick
+  // to build and would be annoying to eventually fail downstream
+  await Promise.all([buildPlayground(), buildBoilerplate()]);
+
+  await Promise.all([buildSamples(), importAll()]);
+
+  // Grow can only be linted after samples have been built and possibly linked
+  // to pages have been imported
+  await sh('npm run lint:grow');
+
+  // If on Travis store everything built so far for later stages to pick up
 }
 
 exports.clean = clean;
 exports.importAll = importAll;
-exports.frontend = gulp.parallel(sass, templates, icons);
-exports.samples = samples;
-exports.pages = pages;
+exports.buildFrontend = buildFrontend;
+exports.buildSamples = buildSamples;
+exports.buildPages = buildPages;
+
+exports.prepareBuild = prepareBuild;
+exports.build = gulp.series(buildFrontend, buildPages);

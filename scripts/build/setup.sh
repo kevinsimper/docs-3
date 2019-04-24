@@ -66,7 +66,7 @@ echo $(GREEN "Imported documents!")
 # been built and all documents have been imported
 echo $(CYAN "Checking document references ...")
 echo -e "travis_fold:start:lint-grow\n"
-cd $root && npm run lint:node
+cd $root && npm run lint:grow
 echo -e "travis_fold:end:lint-grow\n"
 echo $(GREEN "Checked document references!")
 
