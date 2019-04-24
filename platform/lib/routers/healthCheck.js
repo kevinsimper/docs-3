@@ -17,23 +17,19 @@
 'use strict';
 
 const express = require('express');
-const yaml = require('js-yaml');
-const fs = require('fs');
-const utils = require('@lib/utils');
-const config = require('@lib/config');
-
-const BUILD_INFO_PATH = utils.project.absolute('platform/config/build-info.yaml');
 
 // eslint-disable-next-line new-cap
-const whoAmI = express.Router();
-const info = {
-  'environment': config.environment,
-  'build': yaml.safeLoad(fs.readFileSync(BUILD_INFO_PATH, 'utf8')),
-};
+const healthCheck = express.Router();
+const HEALTH_CHECK_PATH = '/__health-check';
 
-whoAmI.get('/who-am-i', (request, response) => {
-  response.setHeader('Content-Type', 'application/json');
-  response.status(200).send(JSON.stringify(info, null, 2));
+// Used by GCE to determine wether a VM instance is healthy.
+healthCheck.get(HEALTH_CHECK_PATH, (req, res) => {
+  // TODO add more checks
+  console.log('[HEALTH CHECK] OK');
+  res.status(200).send('OK');
 });
 
-module.exports = whoAmI;
+module.exports = {
+  router: healthCheck,
+  HEALTH_CHECK_PATH,
+};
