@@ -18,7 +18,7 @@
 
 const signale = require('signale');
 const fs = require('fs');
-const mri = require('mri');
+const options = require('mri')(process.argv.slice(2));
 const yaml = require('js-yaml');
 const utils = require('@lib/utils');
 
@@ -62,7 +62,7 @@ class Config {
     this.shared = require(utils.project.absolute('platform/config/shared.json'));
 
     // Globally initialize command line arguments for use across all modules
-    this.options = mri(process.argv.slice(2));
+    this.options = options;
 
     // Synchronously write podspec for Grow to run flawlessly later in pipeline.
     try {
@@ -168,6 +168,6 @@ class Config {
   }
 }
 
-const config = new Config(process.env.APP_ENV || process.env.NODE_ENV);
+const config = new Config(options.env || process.env.APP_ENV || process.env.NODE_ENV);
 
 module.exports = config;
