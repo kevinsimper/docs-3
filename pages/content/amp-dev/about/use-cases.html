@@ -1,6 +1,51 @@
 ---
 $title: Use cases
 $view: /views/custom.j2
+feature_demos:
+  - title: AMP Tube
+    description: A simple YouTube search engine and viewer app, implemented in AMP.
+    url: https://tomayac.github.io/amp-tube/
+    label: See demo
+    formats:
+      - websites
+    image:
+      src: '/static/img/teaser-use-cases-amp-tube.jpg'
+      width: 1
+      height: 1
+      alt: AMP Tube
+  - title: AMP Tube
+    description: A simple YouTube search engine and viewer app, implemented in AMP.
+    url: https://tomayac.github.io/amp-tube/
+    label: See demo
+    formats:
+      - websites
+    image:
+      src: '/static/img/teaser-use-cases-amp-tube.jpg'
+      width: 1
+      height: 1
+      alt: AMP Tube
+  - title: AMP Tube
+    description: A simple YouTube search engine and viewer app, implemented in AMP.
+    url: https://tomayac.github.io/amp-tube/
+    label: See demo
+    formats:
+      - websites
+    image:
+      src: '/static/img/teaser-use-cases-amp-tube.jpg'
+      width: 1
+      height: 1
+      alt: AMP Tube
+  - title: AMP Tube
+    description: A simple YouTube search engine and viewer app, implemented in AMP.
+    url: https://tomayac.github.io/amp-tube/
+    label: See demo
+    formats:
+      - websites
+    image:
+      src: '/static/img/teaser-use-cases-amp-tube.jpg'
+      width: 1
+      height: 1
+      alt: AMP Tube
 ---
 {% block styles %}
 {% do doc.styles.addCssFile('css/components/templates/use-cases.css') %}
@@ -24,6 +69,74 @@ $view: /views/custom.j2
         <div class="ap--container">
           {% include 'views/partials/fragment-slider-texts.j2' %}
         </div>
+    </div>
+  </section>
+
+  {% do doc.styles.addCssFile('/css/components/organisms/teaser-grid.css') %}
+
+  <amp-state id="activeFilter">
+    <script type="application/json">
+      {
+        "chosenFilter": "none"
+      }
+    </script>
+  </amp-state>
+
+  <section class="ap--teaser-grid ap--container">
+    <div class="ap-o-teaser-grid">
+      <div class="ap-o-teaser-grid-list ap-o-teaser-grid-list-count-{{ teasers|count }}">
+        {% for feature_demo in doc.feature_demos %}
+        {% do doc.styles.addCssFile('/css/components/molecules/teaser-guide-tutorial.css') %}
+        <div class="ap-m-teaser ap-m-teaser-guide-tutorial">
+          <a href="{{ feature_demo.url }}">
+            {% if feature_demo.formats %}
+            {% do doc.styles.addCssFile('/css/components/molecules/tag.css') %}
+            <div class="ap-m-teaser-tags">
+              {% for format in feature_demo.formats %}
+              <div class="ap-m-tag ap-m-tag-{{ format }} ap-m-teaser-tag"></div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            {# image #}
+            <div class="ap-a-img ap-m-teaser-image no-shadow">
+              <amp-img src="{{ feature_demo.image.src }}" layout="responsive" width="{{ feature_demo.image.width }}" height="{{ feature_demo.image.height }}" alt="{{ feature_demo.image.alt }}"></amp-img>
+            </div>
+
+            {# card container #}
+            <div class="ap-m-teaser-card">
+              <div class="ap-m-teaser-content">
+                <h4 class="ap-m-teaser-headline">{{ feature_demo.title }}</h4>
+                <p class="ap-m-teaser-copy">{{ feature_demo.description }}</p>
+
+                {% if feature_demo.url %}
+                <span class="ap-m-lnk">
+                  <span class="ap-a-ico ap-m-lnk-icon">
+                    {% do doc.icons.useIcon('icons/external.svg') %}
+                    <svg><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#external"></use></svg>
+                  </span>
+                  <span class="ap-m-lnk-text">{{ feature_demo.label }}</span>
+                </span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="ap-m-copy">
+      <h2 id="feauture-demos">Feature demos</h2>
+      <p>The samples above prove that AMP pages may come in various styles and indeed might have their own unique appearance. The demos on the left additionally prove the wide range of practical use cases you are able to implement with only AMP.</p>
+
+      <a href="https://github.com/ampproject/samples" class="ap-m-lnk ap-m-lnk-square">
+        <div class="ap-a-ico ap-m-lnk-icon">
+          {% do doc.icons.useIcon('icons/external.svg') %}
+          <svg><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#external"></use></svg>
+        </div>
+        <span class="ap-m-lnk-text">See all on GitHub</span>
+      </a>
     </div>
   </section>
 </main>
