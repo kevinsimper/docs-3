@@ -139,7 +139,7 @@ async function updateStart() {
                  start-update ${group.name} \
                  --version template=${config.instance.template} \
                  --zone=${group.zone} \
-                 --min-ready 1m \
+                 --min-ready 4m \
                  --max-surge 1 \
                  --max-unavailable 1`);
   });
@@ -178,7 +178,7 @@ exports.imageBuild = imageBuild;
 exports.imageList = imageList;
 exports.imageRunLocal = imageRunLocal;
 exports.imageUpload = imageUpload;
-exports.instanceTemplateCreate = series(verifyTag, imageUpload, instanceTemplateCreate);
+exports.instanceTemplateCreate = instanceTemplateCreate;
 exports.updateStop = updateStop;
 exports.updateStatus = updateStatus;
 exports.updateStart = updateStart;

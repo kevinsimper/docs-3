@@ -50,14 +50,13 @@ class Platform {
     return new Promise(async (resolve, reject) => {
       try {
         this._createServer();
-        await this._configureDevMode(HOST);
         const httpServer = this.server.listen(PORT, () => {
           signale.success(`server listening on ${PORT}!`);
           resolve();
         });
         // Increase keep alive timeout
         // see https://cloud.google.com/load-balancing/docs/https/#timeouts_and_retries
-        httpServer.keepAliveTimeout = 620 * 1000;
+        httpServer.keepAliveTimeout = 700 * 1000;
       } catch (err) {
         reject(err);
       }
@@ -76,7 +75,6 @@ class Platform {
     // pass app engine HTTPS status to express app
     this.server.set('trust proxy', true);
 
-    this._configureDevMode(HOST);
     this._configureMiddlewares();
     this._configureSubdomains();
     this._configureRouters();
@@ -101,7 +99,11 @@ class Platform {
         let seconds = (timeElapsed[0] * 1000 + timeElapsed[1] / 1e6) / 1000;
         seconds = seconds.toFixed(3);
         const prefix = seconds > 1 ? 'CRITICAL_TIMING' : 'TIMING';
-        console.log(`[${prefix}] ${req.get('host')}${req.url} ${seconds}s [${res.statusCode}]`);
+        let postfix = `[${res.statusCode}]`;
+        if (req.header('amp-cache-transform')) {
+          postfix += ' [SXG]';
+        }
+        console.log(`[${prefix}] ${req.get('host')}${req.originalUrl} ${seconds}s ${postfix}`);
       });
 
       next();
@@ -140,29 +142,6 @@ class Platform {
     });
     // handle 404s
     this.server.use(routers.notFound);
-  }
-
-  _configureDevMode() {
-    if (!config.isDevMode()) {
-      return Promise.resolve();
-    }
-    return new Promise((resolve) => {
-      const HttpProxy = require('http-proxy');
-      // When in development fire up a second server as a simple proxy
-      // to simulate CORS requests for stuff like playground
-      this.proxy = express();
-      this.proxy.listen(config.hosts.api.port, () => {
-        signale.success(`Proxy available on ${config.hosts.api.base}`);
-        resolve();
-      });
-
-      const proxy = new HttpProxy();
-      this.proxy.get('/*', (request, response, next) => {
-        proxy.web(request, response, {
-          'target': HOST,
-        }, next);
-      });
-    });
   }
 };
 
