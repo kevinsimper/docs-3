@@ -24,7 +24,7 @@ require('module-alias/register');
  * @return {Boolean}
  */
 function onTravis() {
-  return !!process.env.TRAVIS
+  return !!process.env.TRAVIS;
 }
 
 const folds = {};
