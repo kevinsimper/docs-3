@@ -63,13 +63,6 @@ class Config {
 
     // Globally initialize command line arguments for use across all modules
     this.options = options;
-
-    // Synchronously write podspec for Grow to run flawlessly later in pipeline.
-    try {
-      this._configureGrow();
-    } catch (err) {
-      // writes are not permitted on GAE or in a container
-    }
   }
 
   /**
@@ -163,8 +156,14 @@ class Config {
       signale.info('Only building locales', this.options.locales);
     }
 
-    fs.writeFileSync(GROW_CONFIG_DEST, yaml.dump(podspec, {'noRefs': true}));
-    signale.success('Configured Grow!');
+    try {
+      fs.writeFileSync(GROW_CONFIG_DEST, yaml.dump(podspec, {'noRefs': true}));
+      signale.success('Configured Grow!');
+      this._configureGrow();
+    } catch (err) {
+      signale.fatal('Could not configure Grow', e);
+      process.exit(1);
+    }
   }
 }
 
