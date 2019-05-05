@@ -49,7 +49,13 @@ function fold(label) {
   folds[label] = !!folds[label];
 }
 
+const build = {
+  number: process.env.TRAVIS_BUILD_NUMBER,
+  job: process.env.TRAVIS_JOB_NUMBER,
+};
+
 module.exports = {
   onTravis,
   fold,
+  build,
 };

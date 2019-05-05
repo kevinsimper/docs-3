@@ -27,46 +27,47 @@ jobs:
   include:
     - stage: setup
       name: 'Check code, import documents, build samples, playground & boilerplate'
-      script: unbuffer ./scripts/build/setup.sh
+      script: unbuffer gulp prepareBuild
     - &build
       stage: build
       install:
         - npm ci
         - pip install grow==0.7.4 --user
       name: 'Build Pages (EN)'
-      script: unbuffer npm run build:staging -- --locales en
+      script: unbuffer gulp buildPages --locales en
     - <<: *build
       name: 'Build Pages (FR)'
-      script: unbuffer npm run build:staging -- --locales fr
+      script: unbuffer gulp buildPages --locales fr
     - <<: *build
       name: 'Build Pages (AR)'
-      script: unbuffer npm run build:staging -- --locales ar
+      script: unbuffer gulp buildPages --locales ar
     - <<: *build
       name: 'Build Pages (ES)'
-      script: unbuffer npm run build:staging -- --locales es
+      script: unbuffer gulp buildPages --locales es
     - <<: *build
       name: 'Build Pages (IT)'
-      script: unbuffer npm run build:staging -- --locales it
+      script: unbuffer gulp buildPages --locales it
     - <<: *build
       name: 'Build Pages (ID)'
-      script: unbuffer npm run build:staging -- --locales id
+      script: unbuffer gulp buildPages --locales id
     - <<: *build
       name: 'Build Pages (JA)'
-      script: unbuffer npm run build:staging -- --locales ja
+      script: unbuffer gulp buildPages --locales ja
     - <<: *build
       name: 'Build Pages (ko)'
-      script: unbuffer npm run build:staging -- --locales ko
+      script: unbuffer gulp buildPages --locales ko
     - <<: *build
       name: 'Build Pages (BR)'
-      script: unbuffer npm run build:staging -- --locales pt_BR
+      script: unbuffer gulp buildPages --locales pt_BR
     - <<: *build
       name: 'Build Pages (RU)'
-      script: unbuffer npm run build:staging -- --locales ru
+      script: unbuffer gulp buildPages --locales ru
     - <<: *build
       name: 'Build Pages (TR)'
-      script: unbuffer npm run build:staging -- --locales tr
+      script: unbuffer gulp buildPages --locales tr
     - <<: *build
       name: 'Build Pages (CN)'
-      script: unbuffer npm run build:staging -- --locales zh_CN
+      script: unbuffer gulp buildPages --locales zh_CN
     - stage: deploy
-      script: unbuffer ./scripts/deploy.sh
+      script:
+        - unbuffer gulp finalizeBuild

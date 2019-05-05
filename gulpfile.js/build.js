@@ -18,15 +18,31 @@
 
 const gulp = require('gulp');
 const {sh} = require('@lib/utils/sh');
-const _ = require('@lib/config');
+const config = require('@lib/config');
 const del = require('del');
 const {samplesBuilder} = require('@lib/build/samplesBuilder');
-const {project} = require('@lib/utils');
+const {project, travis} = require('@lib/utils');
 const ComponentReferenceImporter = require('@lib/pipeline/componentReferenceImporter');
 const SpecImporter = require('@lib/pipeline/specImporter');
 const roadmapImporter = require('@lib/pipeline/roadmapImporter');
 const {pageTransformer} = require('@lib/build/pageTransformer');
 const gulpSass = require('gulp-sass');
+const {readdirSync} = require('fs');
+
+// The Google Cloud Storage bucket used to store build job artifacts
+const TRAVIS_GCS_PATH = 'gs://amp-dev-ci/travis/'
+
+// Local path to the archive containing artifacts of the first stage
+const SETUP_ARCHIVE = 'build/setup.zip';
+// All paths that contain altered files at build setup time
+const SETUP_STORED_PATHS = [
+  'pages/content',
+  project.paths.DIST,
+  'boilerplate/dist',
+  'playground/dist',
+  '.cache',
+  'examples/static/samples/samples.json'
+];
 
 /**
  * Cleans all directories/files that get created by any of the following
@@ -38,8 +54,8 @@ function clean() {
   return del([
     project.absolute('.cache/**/*'),
 
-    project.absolute('dist'),
-    project.absolute('build'),
+    project.paths.DIST,
+    project.paths.BUILD,
 
     project.absolute('boilerplate/dist'),
 
@@ -104,6 +120,14 @@ function _icons() {
 }
 
 /**
+ * Runs all tasks needed to build the frontend
+ * @return {undefined}
+ */
+function buildFrontend(callback) {
+  return (gulp.parallel(_sass, _templates, _icons))(callback);
+}
+
+/**
  * Builds the playground
  * @return {Promise}
  */
@@ -119,14 +143,6 @@ function buildBoilerplate() {
   return sh('node build.js', {
     workingDir: project.absolute('boilerplate'),
   });
-}
-
-/**
- * Runs all tasks needed to build the frontend
- * @return {Promise}
- */
-function buildFrontend(callback) {
-  return (gulp.parallel(_sass, _templates, _icons))(callback);
 }
 
 
@@ -156,18 +172,12 @@ function importAll() {
 
 
 /**
- * Starts Grow to build the pages
+ * Builds playground and boilerplate generator, imports all remote documents,
+ * builds samples, lints Grow pod and JavaScript.
+ *
+ * @return {Promise}
  */
-async function buildPages() {
-  await sh('grow deploy --noconfirm --threaded', {
-    workingDir: project.paths.GROW_POD,
-  });
-
-  // After the pages have been built by Grow create transformed versions
-  return pageTransformer.start(project.paths.GROW_BUILD_DEST);
-}
-
-async function prepareBuild() {
+async function setupBuild() {
   await sh('npm run lint:node');
 
   // Those two are built that early in the flow as they are fairly quick
@@ -178,9 +188,57 @@ async function prepareBuild() {
 
   // Grow can only be linted after samples have been built and possibly linked
   // to pages have been imported
-  await sh('npm run lint:grow');
+  // TODO: Reenable after false-positives have been fixed
+  // await sh('npm run lint:grow');
 
   // If on Travis store everything built so far for later stages to pick up
+  if (travis.onTravis()) {
+    await sh('mkdir -p build');
+    await sh(`zip -r ${SETUP_ARCHIVE} ${SETUP_STORED_PATHS.join(' ')}`);
+    await sh(`gsutil cp ${SETUP_ARCHIVE} ${TRAVIS_GCS_PATH}${travis.build.number}/${SETUP_ARCHIVE}`);
+  }
+}
+
+/**
+ * Starts Grow to build the pages
+ *
+ * @return {Promise}
+ */
+async function buildPages() {
+  // If building on Travis fetch artifacts built in previous stages
+  if (travis.onTravis()) {
+    await sh(`gsutil cp ${TRAVIS_GCS_PATH}${travis.build.number}/${SETUP_ARCHIVE} ${SETUP_ARCHIVE}`);
+    await sh(`unzip -o -q -d . ${SETUP_ARCHIVE}`);
+  }
+
+  config.configureGrow();
+  await sh('grow deploy --noconfirm --threaded', {
+    workingDir: project.paths.GROW_POD,
+  });
+
+  // After the pages have been built by Grow create transformed versions
+  await pageTransformer.start(project.paths.GROW_BUILD_DEST);
+
+  // ... and again if on Travis store all built files for a later stage to pick up
+  if (travis.onTravis()) {
+    const archive = `build/pages-${travis.build.job}.zip`;
+    await sh(`zip -r ${archive} dist/pages`);
+    await sh(`gsutil cp ${archive} ${TRAVIS_GCS_PATH}${travis.build.number}/pages-${travis.build.job}.zip`);
+  }
+}
+
+/**
+ * Finalizes a build by fetching eventual remote artifacts and executing final
+ * build step like collecting the static files before building a docker image
+ *
+ * @return {Promise}
+ */
+async function finalizeBuild() {
+  // If building on Travis fetch artifacts built in previous stages
+  if (travis.onTravis()) {
+    await sh(`gsutil cp -r ${TRAVIS_GCS_PATH}${travis.build.number} ${project.paths.BUILD}`);
+    await sh(`find build -type f -exec unzip -o -q -d . {} \;`);
+  }
 }
 
 exports.clean = clean;
@@ -189,5 +247,6 @@ exports.buildFrontend = buildFrontend;
 exports.buildSamples = buildSamples;
 exports.buildPages = buildPages;
 
-exports.prepareBuild = prepareBuild;
+exports.setupBuild = setupBuild;
 exports.build = gulp.series(buildFrontend, buildPages);
+exports.finalizeBuild = finalizeBuild;

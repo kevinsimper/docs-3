@@ -99,7 +99,7 @@ function imageBuild() {
 }
 
 /**
- * Builds a local docker image for testing.
+ * Starts a local docker image for testing.
  */
 function imageRunLocal() {
   return sh(`docker run -d -p 8082:80 ${config.image.current}`);
