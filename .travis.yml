@@ -27,7 +27,7 @@ jobs:
   include:
     - stage: setup
       name: 'Check code, import documents, build samples, playground & boilerplate'
-      script: unbuffer gulp prepareBuild
+      script: unbuffer gulp setupBuild
     - &build
       stage: build
       install:
