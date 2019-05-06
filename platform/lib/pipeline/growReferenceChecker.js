@@ -82,7 +82,8 @@ class GrowReferenceChecker {
         if (Object.keys(this._multipleMatches).length == 0
             && this._unfindableDocuments.length == 0) {
           this._log.success('All references intact!');
-          process.exit(0);
+          resolve();
+          return;
         }
 
         this._log.complete('Finished automatic fixing.');
