@@ -24,7 +24,8 @@ const {samplesBuilder} = require('@lib/build/samplesBuilder');
 const {project, travis} = require('@lib/utils');
 const ComponentReferenceImporter = require('@lib/pipeline/componentReferenceImporter');
 const SpecImporter = require('@lib/pipeline/specImporter');
-const roadmapImporter = require('@lib/pipeline/roadmapImporter');
+// TODO: Fails on Travis with HttpError: Requires authentication
+// const roadmapImporter = require('@lib/pipeline/roadmapImporter');
 const {pageTransformer} = require('@lib/build/pageTransformer');
 const gulpSass = require('gulp-sass');
 
