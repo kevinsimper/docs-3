@@ -36,12 +36,12 @@ const TRAVIS_GCS_PATH = 'gs://amp-dev-ci/travis/';
 const SETUP_ARCHIVE = 'build/setup.zip';
 // All paths that contain altered files at build setup time
 const SETUP_STORED_PATHS = [
-  'pages/content',
+  project.absolute('pages/content'),
   project.paths.DIST,
-  'boilerplate/dist',
-  'playground/dist',
-  '.cache',
-  'examples/static/samples/samples.json',
+  project.absolute('boilerplate/dist'),
+  project.absolute('playground/dist'),
+  project.absolute('.cache'),
+  project.absolute('examples/static/samples/samples.json'),
 ];
 
 /**
