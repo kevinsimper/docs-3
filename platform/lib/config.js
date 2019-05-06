@@ -101,7 +101,7 @@ class Config {
    * Builds a podspec for the current environment and writes it to the Grow pod
    * @return {undefined}
    */
-  _configureGrow() {
+  configureGrow() {
     let podspec = fs.readFileSync(GROW_CONFIG_TEMPLATE_PATH, 'utf-8');
     podspec = yaml.safeLoad(podspec);
 
