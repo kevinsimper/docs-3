@@ -45,8 +45,8 @@ class GitHubImporter {
     this._log = log;
     checkCredentials();
     this._github = octonode.client(CLIENT_TOKEN || {
-      'clientId': CLIENT_ID,
-      'clientSecret': CLIENT_SECRET,
+      'id': CLIENT_ID,
+      'secret': CLIENT_SECRET,
     });
   }
   /**
