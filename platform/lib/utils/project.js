@@ -47,6 +47,8 @@ function pagePath(relativePath) {
  */
 const paths = {
   ROOT: absolute('.'),
+  BUILD: absolute('build'),
+  DIST: absolute('dist'),
   SCSS: absolute('frontend/scss'),
   CSS: absolute('pages/css'),
   GROW_POD: absolute('pages'),

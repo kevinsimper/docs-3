@@ -24,7 +24,7 @@ require('module-alias/register');
  * @return {Boolean}
  */
 function onTravis() {
-  return !!process.env.TRAVIS
+  return !!process.env.TRAVIS;
 }
 
 const folds = {};
@@ -49,7 +49,13 @@ function fold(label) {
   folds[label] = !!folds[label];
 }
 
+const build = {
+  number: process.env.TRAVIS_BUILD_NUMBER,
+  job: process.env.TRAVIS_JOB_NUMBER,
+};
+
 module.exports = {
   onTravis,
   fold,
+  build,
 };

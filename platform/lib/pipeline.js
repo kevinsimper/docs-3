@@ -201,6 +201,7 @@ class Pipeline {
    */
   async generatePages() {
     const grow = new Grow();
+    config.configureGrow();
     if (config.isDevMode()) {
       // During development start Grow's dev server
       return grow.run();

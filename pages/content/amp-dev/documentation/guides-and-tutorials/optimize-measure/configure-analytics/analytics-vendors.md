@@ -289,7 +289,13 @@ Adds support for Parsely. Configuration details can be found at [parsely.com/doc
 
 Type attribute value: `piano`
 
-Adds support for Piano.  Configuration details can be found at [vx.piano.io](http://vx.piano.io/javascript-tracking-amp).
+Adds support for Piano. Configuration details can be found at [vx.piano.io](http://vx.piano.io/javascript-tracking-amp).
+
+### Pinpoll
+
+Type attribute value: `pinpoll`
+
+Adds support for Pinpoll. Configuration details can be found at [pinpoll.com](https://pinpoll.com/).
 
 ### Pressboard
 
@@ -369,3 +375,9 @@ Adds support for Webtrekk. Configuration details can be found at [supportcenter.
 Type attribute value: `metrika`
 
 Adds support for Yandex Metrica.  Configuration details can be found at [Yandex Support](https://yandex.com/support/metrica/code/install-counter-amp.xml).
+
+### Vpon Analytics
+
+Type attribute value: `vponanalytics`
+
+Adds support for Vpon Vpon Analytics. Configuration details can be found at [Vpon Analytics](https://cmp.vpadn.com/dmp/doc/amp_analytics.html).
