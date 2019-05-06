@@ -165,7 +165,8 @@ function importAll() {
   return Promise.all([
     (new ComponentReferenceImporter()).import(),
     (new SpecImporter()).import(),
-    roadmapImporter.importRoadmap(),
+    // TODO: Fails on Travis with HttpError: Requires authentication
+    // roadmapImporter.importRoadmap(),
   ]);
 }
 
