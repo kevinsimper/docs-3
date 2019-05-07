@@ -252,5 +252,5 @@ exports.buildSamples = buildSamples;
 exports.buildPages = buildPages;
 
 exports.setupBuild = setupBuild;
-exports.build = gulp.series(buildFrontend, buildPages);
+exports.build = gulp.series(gulp.parallel(buildSamples, buildFrontend), buildPages);
 exports.finalizeBuild = finalizeBuild;
