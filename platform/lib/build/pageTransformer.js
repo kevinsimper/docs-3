@@ -108,7 +108,7 @@ class PageTransformer {
   start(path) {
     // Ugly but needed to keep scope for .pipe
     const scope = this;
-    return gulp.src(`${path}/**/*`)
+    return gulp.src(path)
         .pipe(through.obj(async function(canonicalPage, encoding, callback) {
           // The following transformations should only be applied to Grow's
           // HTML output, just forward all other files

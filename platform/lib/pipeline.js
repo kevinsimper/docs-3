@@ -226,7 +226,7 @@ class Pipeline {
 
   _minifyPages() {
     return new Promise((resolve, reject) => {
-      const stream = pageTransformer.start(utils.project.absolute('platform/pages'));
+      const stream = pageTransformer.start(`${utils.project.absolute('platform/pages')}/**/*.html`);
 
       stream.on('error', (error) => {
         pageTransformer._log.fatal(`Something went wrong while transforming HTML: ${error}`);

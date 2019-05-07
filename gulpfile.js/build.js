@@ -36,12 +36,12 @@ const TRAVIS_GCS_PATH = 'gs://amp-dev-ci/travis/';
 const SETUP_ARCHIVE = 'build/setup.zip';
 // All paths that contain altered files at build setup time
 const SETUP_STORED_PATHS = [
-  project.absolute('pages/content'),
-  project.paths.DIST,
-  project.absolute('boilerplate/dist'),
-  project.absolute('playground/dist'),
-  project.absolute('.cache'),
-  project.absolute('examples/static/samples/samples.json'),
+  './pages/content',
+  './dist',
+  './boilerplate/dist',
+  './playground/dist',
+  './.cache',
+  './examples/static/samples/samples.json',
 ];
 
 /**
@@ -89,7 +89,7 @@ function _sass() {
     'includePaths': project.paths.SCSS,
   };
 
-  return gulp.src(project.paths.SCSS)
+  return gulp.src(`${project.paths.SCSS}/**/[^_]*.scss`)
       .pipe(gulpSass(options))
       .on('error', function(e) {
         console.error(e);
@@ -214,18 +214,22 @@ async function buildPages() {
     await sh(`unzip -o -q -d . ${SETUP_ARCHIVE}`);
   }
 
-  config.configureGrow();
-  await sh('grow deploy --noconfirm --threaded', {
-    workingDir: project.paths.GROW_POD,
-  });
+  // config.configureGrow();
+  // await sh('grow deploy --noconfirm --threaded', {
+  //   workingDir: project.paths.GROW_POD,
+  // });
 
+  console.log(project.paths.GROW_BUILD_DEST);
   // After the pages have been built by Grow create transformed versions
-  await pageTransformer.start(project.paths.GROW_BUILD_DEST);
+  await pageTransformer.start([
+     `${project.paths.GROW_BUILD_DEST}/**/*.html`,
+     `!${project.paths.GROW_BUILD_DEST}/shared/*.html`,
+  ]);
 
   // ... and again if on Travis store all built files for a later stage to pick up
   if (travis.onTravis()) {
     const archive = `build/pages-${travis.build.job}.zip`;
-    await sh(`zip -r ${archive} dist/pages`);
+    await sh(`zip -r ${archive} ./dist/pages`);
     await sh(`gsutil cp ${archive}` +
       `${TRAVIS_GCS_PATH}${travis.build.number}/pages-${travis.build.job}.zip`);
   }
