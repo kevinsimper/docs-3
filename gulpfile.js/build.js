@@ -19,7 +19,12 @@
 const gulp = require('gulp');
 const {sh} = require('@lib/utils/sh');
 const config = require('@lib/config');
+const signale = require('signale');
 const del = require('del');
+const fs = require('fs');
+const path = require('path');
+const through = require('through2');
+const archiver = require('archiver');
 const {samplesBuilder} = require('@lib/build/samplesBuilder');
 const {project, travis} = require('@lib/utils');
 const ComponentReferenceImporter = require('@lib/pipeline/componentReferenceImporter');
@@ -43,6 +48,9 @@ const SETUP_STORED_PATHS = [
   './.cache/',
   './examples/static/samples/samples.json',
 ];
+
+/* Source paths of files that should be collected */
+
 
 /**
  * Cleans all directories/files that get created by any of the following
@@ -71,6 +79,7 @@ function clean() {
     project.absolute('pages/podspec.yaml'),
 
     project.paths.GROW_BUILD_DEST,
+    project.paths.STATICS_DEST,
     project.absolute('platform/static'),
 
     project.absolute('playground/dist'),
@@ -240,17 +249,88 @@ async function buildPages() {
 }
 
 /**
+ * Collects the static files of all sub projcts to dist while creating ZIPs
+ * from folders ending on .zip
+ *
+ * @return {Stream}
+ */
+function collectStatics(done) {
+  // Used to keep track of unfinished archives
+  const archives = {};
+
+  gulp.src([
+    project.absolute('pages/static/**/*'),
+    project.absolute('examples/static/**/*'),
+  ]).pipe(through.obj(async function(file, encoding, callback) {
+    // Skip potential archive parent directory to have the path writable later
+    if (file.stat.isDirectory() && file.path.endsWith('.zip')) {
+      callback();
+      return;
+    }
+
+    // Check if file could be part of a ZIP and not already is one itself
+    if (file.path.includes('.zip') && !file.path.endsWith('.zip')) {
+      // If the file should be part of a ZIP file pass it over to archiver
+      const relativePath = file.relative.slice(0, file.relative.indexOf('.zip') + 4);
+      const archive = archives[relativePath] || archiver('zip', {
+        'zlib': {'level': 9},
+      });
+
+      // Only append real files, directories will be created automatically
+      const filePath = file.relative.replace(relativePath, '');
+      if (!file.stat.isDirectory() && filePath) {
+        archive.append(file.contents, {'name': filePath});
+      }
+
+      archives[relativePath] = archive;
+      callback();
+      return;
+    }
+
+    // ... and simply copy all other files
+    this.push(file);
+    callback();
+  }))
+  .pipe(gulp.dest(project.paths.STATICS_DEST))
+  .on('end', async () => {
+    signale.await('Writing ZIPs ...');
+
+    const writes = [];
+    for (const [archivePath, contents] of Object.entries(archives)) {
+      contents.finalize();
+
+      const dest = path.join(project.paths.STATICS_DEST, archivePath);
+      const archive = fs.createWriteStream(dest);
+
+      writes.push(new Promise((resolve, reject) => {
+        contents.pipe(archive).on('close', () => {
+          signale.success(`Wrote archive ${archivePath}`);
+          resolve();
+        });
+      }));
+    };
+
+    await Promise.all(writes);
+    signale.await('Finished collecting static files!');
+    done();
+  });
+}
+
+/**
  * Finalizes a build by fetching eventual remote artifacts and executing final
  * build step like collecting the static files before building a docker image
  *
  * @return {Promise}
  */
-async function finalizeBuild() {
-  // If building on Travis fetch artifacts built in previous stages
-  if (travis.onTravis()) {
-    await sh(`gsutil cp -r ${TRAVIS_GCS_PATH}${travis.build.number} ${project.paths.BUILD}`);
-    await sh('find build -type f -exec tar xf {} \;');
-  }
+function finalizeBuild(done) {
+  gulp.series(
+    gulp.parallel(async function fetchArtifacts() {
+      // If building on Travis fetch artifacts built in previous stages
+      if (travis.onTravis()) {
+        await sh(`gsutil cp -r ${TRAVIS_GCS_PATH}${travis.build.number} ${project.paths.BUILD}`);
+        await sh('find build -type f -exec tar xf {} \;');
+      }
+    }, collectStatics))(done);
 }
 
 exports.clean = clean;
@@ -261,4 +341,5 @@ exports.buildPages = buildPages;
 
 exports.setupBuild = setupBuild;
 exports.build = gulp.series(gulp.parallel(buildSamples, buildFrontend), buildPages);
+exports.collectStatics = collectStatics;
 exports.finalizeBuild = finalizeBuild;

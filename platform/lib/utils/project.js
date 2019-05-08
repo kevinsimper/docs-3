@@ -54,6 +54,7 @@ const paths = {
   GROW_POD: absolute('pages'),
   GROW_BUILD_DEST: absolute('build/pages'),
   PAGES_DEST: absolute('dist/pages'),
+  STATICS_DEST: absolute('dist/static'),
 };
 
 module.exports = {
