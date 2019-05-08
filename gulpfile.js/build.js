@@ -33,14 +33,14 @@ const gulpSass = require('gulp-sass');
 const TRAVIS_GCS_PATH = 'gs://amp-dev-ci/travis/';
 
 // Local path to the archive containing artifacts of the first stage
-const SETUP_ARCHIVE = 'build/setup.zip';
+const SETUP_ARCHIVE = 'build/setup.tar.gz';
 // All paths that contain altered files at build setup time
 const SETUP_STORED_PATHS = [
-  './pages/content',
-  './dist',
-  './boilerplate/dist',
-  './playground/dist',
-  './.cache',
+  './pages/content/',
+  './dist/',
+  './boilerplate/dist/',
+  './playground/dist/',
+  './.cache/',
   './examples/static/samples/samples.json',
 ];
 
@@ -195,9 +195,9 @@ async function setupBuild() {
   // If on Travis store everything built so far for later stages to pick up
   if (travis.onTravis()) {
     await sh('mkdir -p build');
-    await sh(`zip -r ${SETUP_ARCHIVE} ${SETUP_STORED_PATHS.join(' ')}`);
+    await sh(`tar cvfj ${SETUP_ARCHIVE} ${SETUP_STORED_PATHS.join(' ')}`);
     await sh(`gsutil cp ${SETUP_ARCHIVE} ` +
-      `${TRAVIS_GCS_PATH}${travis.build.number}/${SETUP_ARCHIVE}`);
+      `${TRAVIS_GCS_PATH}${travis.build.number}/setup.tar.gz`);
   }
 }
 
@@ -209,9 +209,9 @@ async function setupBuild() {
 async function buildPages() {
   // If building on Travis fetch artifacts built in previous stages
   if (travis.onTravis()) {
-    await sh(`gsutil cp ${TRAVIS_GCS_PATH}${travis.build.number}/${SETUP_ARCHIVE}` +
+    await sh(`gsutil cp ${TRAVIS_GCS_PATH}${travis.build.number}/setup.tar.gz` +
       ` ${SETUP_ARCHIVE}`);
-    await sh(`unzip -o -q -d . ${SETUP_ARCHIVE}`);
+    await sh(`tar -xvf ${SETUP_ARCHIVE}`);
   }
 
   config.configureGrow();
