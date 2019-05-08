@@ -214,16 +214,15 @@ async function buildPages() {
     await sh(`unzip -o -q -d . ${SETUP_ARCHIVE}`);
   }
 
-  // config.configureGrow();
-  // await sh('grow deploy --noconfirm --threaded', {
-  //   workingDir: project.paths.GROW_POD,
-  // });
+  config.configureGrow();
+  await sh('grow deploy --noconfirm --threaded', {
+    workingDir: project.paths.GROW_POD,
+  });
 
-  console.log(project.paths.GROW_BUILD_DEST);
   // After the pages have been built by Grow create transformed versions
   await pageTransformer.start([
-     `${project.paths.GROW_BUILD_DEST}/**/*.html`,
-     `!${project.paths.GROW_BUILD_DEST}/shared/*.html`,
+    `${project.paths.GROW_BUILD_DEST}/**/*.html`,
+    `!${project.paths.GROW_BUILD_DEST}/shared/*.html`,
   ]);
 
   // ... and again if on Travis store all built files for a later stage to pick up
