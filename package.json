@@ -1,6 +1,6 @@
 {
   "name": "amp-dev",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "The AMP Project website.",
   "repository": "git@github.com:ampproject/docs.git",
   "engines": {
@@ -94,7 +94,7 @@
     "file-type": "^11.0.0",
     "google-closure-compiler": "20190415.0.0",
     "got": "9.6.0",
-    "gulp": "4.0.1",
+    "gulp": "4.0.2",
     "gulp-amphtml-validator": "1.0.2",
     "gulp-once": "2.0.3",
     "gulp-sass": "4.0.2",
