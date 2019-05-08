@@ -27,7 +27,8 @@ const through = require('through2');
 const archiver = require('archiver');
 const yaml = require('js-yaml');
 const {samplesBuilder} = require('@lib/build/samplesBuilder');
-const {project, travis, git} = require('@lib/utils');
+const {project, travis} = require('@lib/utils');
+const git = require('@lib/utils/git');
 const ComponentReferenceImporter = require('@lib/pipeline/componentReferenceImporter');
 const SpecImporter = require('@lib/pipeline/specImporter');
 // TODO: Fails on Travis with HttpError: Requires authentication
