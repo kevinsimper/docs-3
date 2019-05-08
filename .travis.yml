@@ -71,3 +71,4 @@ jobs:
     - stage: deploy
       script:
         - unbuffer gulp finalizeBuild
+        - gcloud app deploy --project=amp-dev-staging --quiet
