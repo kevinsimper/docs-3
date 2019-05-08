@@ -221,7 +221,7 @@ async function buildPages() {
 
   // After the pages have been built by Grow create transformed versions
   await new Promise((resolve, reject) => {
-    const stream = gulp.src([
+    const stream = pageTransformer.start([
       `${project.paths.GROW_BUILD_DEST}/**/*.html`,
       `!${project.paths.GROW_BUILD_DEST}/shared/*.html`,
     ]);
