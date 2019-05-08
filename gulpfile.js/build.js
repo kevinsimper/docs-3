@@ -195,7 +195,7 @@ async function setupBuild() {
   // If on Travis store everything built so far for later stages to pick up
   if (travis.onTravis()) {
     await sh('mkdir -p build');
-    await sh(`tar cvfj ${SETUP_ARCHIVE} ${SETUP_STORED_PATHS.join(' ')}`);
+    await sh(`tar cfj ${SETUP_ARCHIVE} ${SETUP_STORED_PATHS.join(' ')}`);
     await sh(`gsutil cp ${SETUP_ARCHIVE} ` +
       `${TRAVIS_GCS_PATH}${travis.build.number}/setup.tar.gz`);
   }
@@ -211,7 +211,7 @@ async function buildPages() {
   if (travis.onTravis()) {
     await sh(`gsutil cp ${TRAVIS_GCS_PATH}${travis.build.number}/setup.tar.gz` +
       ` ${SETUP_ARCHIVE}`);
-    await sh(`tar -xvf ${SETUP_ARCHIVE}`);
+    await sh(`tar xf ${SETUP_ARCHIVE}`);
   }
 
   config.configureGrow();
@@ -220,17 +220,22 @@ async function buildPages() {
   });
 
   // After the pages have been built by Grow create transformed versions
-  await pageTransformer.start([
-    `${project.paths.GROW_BUILD_DEST}/**/*.html`,
-    `!${project.paths.GROW_BUILD_DEST}/shared/*.html`,
-  ]);
+  await new Promise((resolve, reject) => {
+    const stream = gulp.src([
+      `${project.paths.GROW_BUILD_DEST}/**/*.html`,
+      `!${project.paths.GROW_BUILD_DEST}/shared/*.html`,
+    ]);
+
+    stream.on('end', resolve);
+    stream.on('error', reject);
+  });
 
   // ... and again if on Travis store all built files for a later stage to pick up
   if (travis.onTravis()) {
-    const archive = `build/pages-${travis.build.job}.zip`;
-    await sh(`zip -r ${archive} ./dist/pages`);
+    const archive = `build/pages-${travis.build.job}.tar.gz`;
+    await sh(`tar cfj ${archive} ./dist/pages`);
     await sh(`gsutil cp ${archive}` +
-      `${TRAVIS_GCS_PATH}${travis.build.number}/pages-${travis.build.job}.zip`);
+      `${TRAVIS_GCS_PATH}${travis.build.number}/pages-${travis.build.job}.tar.gz`);
   }
 }
 
@@ -244,7 +249,7 @@ async function finalizeBuild() {
   // If building on Travis fetch artifacts built in previous stages
   if (travis.onTravis()) {
     await sh(`gsutil cp -r ${TRAVIS_GCS_PATH}${travis.build.number} ${project.paths.BUILD}`);
-    await sh('find build -type f -exec unzip -o -q -d . {} \;');
+    await sh('find build -type f -exec tar xf {} \;');
   }
 }
 
