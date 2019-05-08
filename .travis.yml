@@ -30,6 +30,8 @@ jobs:
       script: unbuffer gulp setupBuild
     - &build
       stage: build
+      env:
+        - APP_ENV=staging
       install:
         - npm ci
         - pip install grow==0.7.4 --user
@@ -54,7 +56,7 @@ jobs:
       name: 'Build Pages (JA)'
       script: unbuffer gulp build --locales ja
     - <<: *build
-      name: 'Build Pages (ko)'
+      name: 'Build Pages (KO)'
       script: unbuffer gulp build --locales ko
     - <<: *build
       name: 'Build Pages (BR)'
