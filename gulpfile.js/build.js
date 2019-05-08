@@ -262,7 +262,7 @@ function collectStatics(done) {
     project.absolute('pages/static/**/*'),
     project.absolute('examples/static/**/*'),
   ]).pipe(through.obj(async function(file, encoding, callback) {
-    // Skip potential archive parent directory to have the path writable later
+    // Skip potential archive parent directories to have the path writable later
     if (file.stat.isDirectory() && file.path.endsWith('.zip')) {
       callback();
       return;
@@ -288,32 +288,33 @@ function collectStatics(done) {
     }
 
     // ... and simply copy all other files
+    // eslint-disable-next-line no-invalid-this
     this.push(file);
     callback();
   }))
-  .pipe(gulp.dest(project.paths.STATICS_DEST))
-  .on('end', async () => {
-    signale.await('Writing ZIPs ...');
+      .pipe(gulp.dest(project.paths.STATICS_DEST))
+      .on('end', async () => {
+        signale.await('Writing ZIPs ...');
 
-    const writes = [];
-    for (const [archivePath, contents] of Object.entries(archives)) {
-      contents.finalize();
+        const writes = [];
+        for (const [archivePath, contents] of Object.entries(archives)) {
+          contents.finalize();
 
-      const dest = path.join(project.paths.STATICS_DEST, archivePath);
-      const archive = fs.createWriteStream(dest);
+          const dest = path.join(project.paths.STATICS_DEST, archivePath);
+          const archive = fs.createWriteStream(dest);
 
-      writes.push(new Promise((resolve, reject) => {
-        contents.pipe(archive).on('close', () => {
-          signale.success(`Wrote archive ${archivePath}`);
-          resolve();
-        });
-      }));
-    };
+          writes.push(new Promise((resolve, reject) => {
+            contents.pipe(archive).on('close', () => {
+              signale.success(`Wrote archive ${archivePath}`);
+              resolve();
+            });
+          }));
+        };
 
-    await Promise.all(writes);
-    signale.await('Finished collecting static files!');
-    done();
-  });
+        await Promise.all(writes);
+        signale.await('Finished collecting static files!');
+        done();
+      });
 }
 
 /**
@@ -324,13 +325,13 @@ function collectStatics(done) {
  */
 function finalizeBuild(done) {
   gulp.series(
-    gulp.parallel(async function fetchArtifacts() {
+      gulp.parallel(async () => {
       // If building on Travis fetch artifacts built in previous stages
-      if (travis.onTravis()) {
-        await sh(`gsutil cp -r ${TRAVIS_GCS_PATH}${travis.build.number} ${project.paths.BUILD}`);
-        await sh('find build -type f -exec tar xf {} \;');
-      }
-    }, collectStatics))(done);
+        if (travis.onTravis()) {
+          await sh(`gsutil cp -r ${TRAVIS_GCS_PATH}${travis.build.number} ${project.paths.BUILD}`);
+          await sh('find build -type f -exec tar xf {} \;');
+        }
+      }, collectStatics))(done);
 }
 
 exports.clean = clean;
