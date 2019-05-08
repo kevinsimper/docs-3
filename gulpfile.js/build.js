@@ -25,8 +25,9 @@ const fs = require('fs');
 const path = require('path');
 const through = require('through2');
 const archiver = require('archiver');
+const yaml = require('js-yaml');
 const {samplesBuilder} = require('@lib/build/samplesBuilder');
-const {project, travis} = require('@lib/utils');
+const {project, travis, git} = require('@lib/utils');
 const ComponentReferenceImporter = require('@lib/pipeline/componentReferenceImporter');
 const SpecImporter = require('@lib/pipeline/specImporter');
 // TODO: Fails on Travis with HttpError: Requires authentication
@@ -36,21 +37,6 @@ const gulpSass = require('gulp-sass');
 
 // The Google Cloud Storage bucket used to store build job artifacts
 const TRAVIS_GCS_PATH = 'gs://amp-dev-ci/travis/';
-
-// Local path to the archive containing artifacts of the first stage
-const SETUP_ARCHIVE = 'build/setup.tar.gz';
-// All paths that contain altered files at build setup time
-const SETUP_STORED_PATHS = [
-  './pages/content/',
-  './dist/',
-  './boilerplate/dist/',
-  './playground/dist/',
-  './.cache/',
-  './examples/static/samples/samples.json',
-];
-
-/* Source paths of files that should be collected */
-
 
 /**
  * Cleans all directories/files that get created by any of the following
@@ -188,6 +174,18 @@ function importAll() {
  * @return {Promise}
  */
 async function setupBuild() {
+  // Local path to the archive containing artifacts of the first stage
+  const SETUP_ARCHIVE = 'build/setup.tar.gz';
+  // All paths that contain altered files at build setup time
+  const SETUP_STORED_PATHS = [
+    './pages/content/',
+    './dist/',
+    './boilerplate/dist/',
+    './playground/dist/',
+    './.cache/',
+    './examples/static/samples/samples.json',
+  ];
+
   await sh('npm run lint:node');
 
   // Those two are built that early in the flow as they are fairly quick
@@ -211,18 +209,24 @@ async function setupBuild() {
 }
 
 /**
+ * Fetches remote artifacts that have been built in earlier stages
+ *
+ * @return {Promise}
+ */
+async function fetchArtifacts() {
+  await sh('mkdir -p build');
+  if (travis.onTravis()) {
+    await sh(`gsutil cp -r ${TRAVIS_GCS_PATH}${travis.build.number} ${project.paths.BUILD}`);
+    await sh('find build -type f -exec tar xf {} \;');
+  }
+}
+
+/**
  * Starts Grow to build the pages
  *
  * @return {Promise}
  */
 async function buildPages() {
-  // If building on Travis fetch artifacts built in previous stages
-  if (travis.onTravis()) {
-    await sh(`gsutil cp ${TRAVIS_GCS_PATH}${travis.build.number}/setup.tar.gz` +
-      ` ${SETUP_ARCHIVE}`);
-    await sh(`tar xf ${SETUP_ARCHIVE}`);
-  }
-
   config.configureGrow();
   await sh('grow deploy --noconfirm --threaded', {
     workingDir: project.paths.GROW_POD,
@@ -318,20 +322,24 @@ function collectStatics(done) {
 }
 
 /**
- * Finalizes a build by fetching eventual remote artifacts and executing final
- * build step like collecting the static files before building a docker image
+ * Writes information about the current build to a file to be able to
+ * inspect the current version on /who-am-i
  *
- * @return {Promise}
+ * @return {undefined}
  */
-function finalizeBuild(done) {
-  gulp.series(
-      gulp.parallel(async () => {
-      // If building on Travis fetch artifacts built in previous stages
-        if (travis.onTravis()) {
-          await sh(`gsutil cp -r ${TRAVIS_GCS_PATH}${travis.build.number} ${project.paths.BUILD}`);
-          await sh('find build -type f -exec tar xf {} \;');
-        }
-      }, collectStatics))(done);
+function persistBuildInfo(done) {
+  const buildInfo = {
+    'timestamp': new Date(),
+    'number': travis.build.number || null,
+    'environment': config.environment,
+    'commit': {
+      'sha': git.version,
+      'message': git.message,
+    },
+    'by': git.user,
+  };
+
+  fs.writeFile(project.paths.BUILD_INFO, yaml.safeDump(buildInfo), done);
 }
 
 exports.clean = clean;
@@ -341,6 +349,6 @@ exports.buildSamples = buildSamples;
 exports.buildPages = buildPages;
 
 exports.setupBuild = setupBuild;
-exports.build = gulp.series(gulp.parallel(buildSamples, buildFrontend), buildPages);
+exports.build = gulp.series(fetchArtifacts, gulp.parallel(buildSamples, buildFrontend), buildPages);
 exports.collectStatics = collectStatics;
-exports.finalizeBuild = finalizeBuild;
+exports.finalizeBuild = gulp.parallel(fetchArtifacts, collectStatics, persistBuildInfo);

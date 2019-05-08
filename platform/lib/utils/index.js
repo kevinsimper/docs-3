@@ -16,8 +16,10 @@
 
 const project = require('./project.js');
 const travis = require('./travis.js');
+const git = require('./git.js');
 
 module.exports = {
   'project': project,
   'travis': travis,
+  'git': git,
 };

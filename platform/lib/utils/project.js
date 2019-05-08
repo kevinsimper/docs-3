@@ -55,6 +55,7 @@ const paths = {
   GROW_BUILD_DEST: absolute('build/pages'),
   PAGES_DEST: absolute('dist/pages'),
   STATICS_DEST: absolute('dist/static'),
+  BUILD_INFO: absolute('platform/config/build-info.yaml'),
 };
 
 module.exports = {
