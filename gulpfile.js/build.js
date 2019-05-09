@@ -330,14 +330,14 @@ function collectStatics(done) {
  */
 function persistBuildInfo(done) {
   const buildInfo = {
-    'timestamp': new Date(),
     'number': travis.build.number || null,
+    'at': new Date(),
+    'by': git.user,
     'environment': config.environment,
     'commit': {
       'sha': git.version,
       'message': git.message,
     },
-    'by': git.user,
   };
 
   fs.writeFile(project.paths.BUILD_INFO, yaml.safeDump(buildInfo), done);
