@@ -28,6 +28,7 @@ const BUILD_INFO_PATH = utils.project.absolute('platform/config/build-info.yaml'
 const whoAmI = express.Router();
 const info = {
   'environment': config.environment,
+  'instance': process.env.GAE_INSTANCE,
   'build': yaml.safeLoad(fs.readFileSync(BUILD_INFO_PATH, 'utf8')),
 };
 
